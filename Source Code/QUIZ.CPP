@@ -1,0 +1,304 @@
+#include <conio.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <fstream.h>
+char ch;
+class player{
+	private:
+		char name[50];
+		int score;
+	public:
+		void setname(char nm[]){//for setting players name
+			strcpy(name,nm);
+		}
+		void scoreplus(){//for incrementing  players score if attempt is correct
+			score+=10;
+		}
+		void scoreminus(){//for decrementing  players score if attempt is wrong
+			score-=5;
+		}
+		char *getname(){//returning players name
+			return name;
+		}
+		int getscore(){//returning players score
+			return score;
+		}
+		void reset(){//if player want to play again then clearing previous attempts
+			strcpy(name,"");
+			score=0;
+		}
+}pl;
+struct ques
+{	char ques[200];
+	char opt1[100];
+	char opt2[100];
+	char opt3[100];
+	char opt4[100];
+	int ans;
+};
+void quit(){//if at any point user want to quit
+	clrscr();
+	cout<<"Do you Really Want to Exit...Press 0 to exit otherwise any key..!\n";
+	ch=getch();
+	if(ch=='0'){
+		exit(0);
+	}
+}
+void quiz(){//function for taking quiz
+	ques qset[15];
+	int j,n=0,chk;
+	fstream file("question.dat",ios::binary|ios::in);//input records as questions from binary file
+	while(file.read((char*)&qset[n],sizeof(qset[n]))){//fetching all records
+		n++;//no. of records fetch
+	}
+	randomize();
+	j=random(n);// for generating random questions 
+	for(int i=1;i<=10&&i<=n;i++){//display and ask for 10 questions answer
+		clrscr();
+		j=(j+1)%n;
+		cout<<"Question no."<<i<<" :"<<qset[j].ques<<"\n";
+		cout<<"\n\tOption 1: "<<qset[j].opt1<<"\n\t"<<"Option 2: "<<qset[j].opt2<<"\n";
+		cout<<"\tOption 3: "<<qset[j].opt3<<"\n\t"<<"Option 4: "<<qset[j].opt4<<"\n";
+		cout<<"\nEnter Right Option: ";
+		cin>>chk;
+		if(chk==qset[j].ans){
+		 	pl.scoreplus();
+		}
+		else{
+			pl.scoreminus();
+		}
+	}
+	clrscr();
+	fstream file1("players.dat",ios::binary|ios::app);
+	file1.write((char*)&pl,sizeof(pl));
+	file1.close();
+	cout<<"Thank You "<<pl.getname()<<" for playing and you Scored "<<pl.getscore()<<"pts\n";
+	cout<<"Press any key to jump to main menu\n";
+	getch();
+}
+void play(){//Initializing the quiz by taking players name
+	clrscr();
+	cout<<"\n|||||||------------------- Quiz ----------------||||||\n";
+	cout<<"\n Enter Your Name :";
+	char n[50];
+	gets(n);
+	pl.setname(n);
+	cout<<"\nPress any key to start Quiz";
+	getch();
+	quiz();
+}
+void scoreboard(){//for displaying the previous players score
+	clrscr();
+	fstream file1("players.dat",ios::binary|ios::in);//fetching players record from players.dat binary file
+	player plyrs[20],temp;
+	int i=0;
+	while(file1.read((char*)&plyrs[i],sizeof(plyrs[i]))){
+		i++;
+	}
+	file1.close();
+	int flag=1;
+	while(flag){
+		flag=0;
+		for(int j=0;j<i-1;j++){
+			if(plyrs[j].getscore()<plyrs[j+1].getscore()){
+				temp=plyrs[j];
+				plyrs[j]=plyrs[j+1];
+				plyrs[j+1]=temp;
+				flag=1;
+			}
+		}
+	}
+	cout<<"|||||||||||------------ScoreBoard-----------||||||||||||\n\n";
+	cout<<"\tRanks\t\tName\t\t      Score\n";
+	for(int j=0;j<i;j++){
+		cout<<"\t"<<j+1<<"\t\t"<<plyrs[j].getname()<<"\t\t\t"<<plyrs[j].getscore()<<"\n";
+	}
+	cout<<"\n\n\nPress any key to jump to main menu..";	
+	getch();
+}
+void add_ques(){//only admin can add questions
+	fstream file("questions.dat",ios::binary|ios::app);
+	ques q;
+	do{  
+		 clrscr();
+		 cout<<"\nEnter Question (max. characters 200 only): ";
+		 gets(q.ques);
+		 cout<<"\nEnter option 1 : ";
+		 gets(q.opt1);
+		 cout<<"\nEnter option 2 : ";
+		 gets(q.opt2);
+		 cout<<"\nEnter option 3 : ";
+		 gets(q.opt3);
+		 cout<<"\nEnter option 4 : ";
+		 gets(q.opt4);
+		 cout<<"\nEnter correct option no.:";
+		 cin>>q.ans;
+		 file.write((char*)&q,sizeof(q));
+		 cout<<"\n\n Press Y to add one more question otherwise any key:";
+		 ch=getch();
+	}while(ch=='y'||ch=='Y');
+	file.close();
+}
+void del_ques(){//deleting whole record file of questions only admin
+	fstream file("question.dat",ios::binary|ios::in);
+	clrscr();
+	cout<<"Do you Really Want to delete all questions...Press 0 to continue otherwise any key..!\n";
+	ch=getch();
+	if(ch=='0'){
+		remove("question.dat");
+	}
+	file.close();
+}
+void show_ques(){//showing all record as questions only admin
+	fstream file("question.dat",ios::binary|ios::in);
+	ques q;
+	while(file.read((char*)&q,sizeof(q))){
+ 		clrscr();
+		cout<<"\nQuestion:"<<q.ques;
+		cout<<"\noption 1 : "<<q.opt1;
+		cout<<"\noption 2 : "<<q.opt2;
+		cout<<"\noption 3 : "<<q.opt3;
+		cout<<"\noption 4 : "<<q.opt4;
+		cout<<"\nCorrect option no.:"<<q.ans;
+		cout<<"\nPress any key to jump to next record";	
+		getch();
+	}	 
+	file.close();
+}
+void reset_score(){//deleting whole record file of players only admin
+	fstream file1("players.dat",ios::binary|ios::in);
+	clrscr();
+	cout<<"Do you Really Want to clear all scores...Press 0 to continue otherwise any key..!\n";
+	ch=getch();
+	if(ch=='0'){
+		remove("players.dat");
+	}
+	file1.close();
+}
+void admin_panel(){//menu to admin
+	clrscr();
+	int x=1;
+	do{
+		clrscr();
+		cout<<"||||||--------------------Admin----------------------|||||||\n";
+		cout<<"||||||--------------------Menu----------------------|||||||\n";
+		cout<<"\n";
+		cout<<"\t\t1.Show all Questions\n";
+		cout<<"\t\t2.Add Questions\n";
+		cout<<"\t\t3.Delete All Questions\n";
+		cout<<"\t\t4.Reset Scoreboard\n";
+		cout<<"\t\t5.Logout to main menu\n";
+		cout<<"\t\t6.Exit\n";
+		cout<<"\n\n\n\nNote*-Press the Serial no. to choose the option.\n";
+		ch=getch();
+		switch(ch){
+			case '1':
+				show_ques();
+			break;
+			case '2':
+				add_ques();
+			break;
+			case '3':
+				del_ques();
+			break;
+			case '4':
+				reset_score();
+			break;
+			case '5':
+				x=0;
+			break;
+			case '6':
+				quit();
+			break;
+			default:
+				cout<<"\nInvalid Option, press any key to Try again..!\n";
+				getch();
+		}
+	}while(x==1);
+}
+void admin(){//validating the admin pin i.e. 9897
+	do{ ch='1';
+		clrscr();
+		char pin[5];
+		cout<<"\nEnter PIN:";
+		for(int i=0;i<4;i++){
+			pin[i]=getch();
+			putch('*');
+		}
+		pin[i]='\0';
+		clrscr();
+		if(strcmp(pin,"9897")==0){
+			admin_panel();
+		}
+		else{
+			cout<<"\nYou entered wrong pin,press 0 key to Try again otherwise any key to main menu";
+			ch=getch();
+		}
+	}while(ch=='0');	
+}
+void how_to_play(){//printing how to play
+	clrscr();
+	cout<<"\n|||||||-------------------How to Play----------------||||||\n";
+	cout<<"\nTHIS QUIZ CONSIST OF 10 QUESTIONS,\n";
+	cout<<"YOU WILL GET +10 FOR RIGHT RESPONSE \n";
+	cout<<"AND -5 FOR WRONG RESPONSE\n";
+	cout<<"TEST YOUR KNOWLEDGE\n";
+	cout<<"CHOOSE PLAY IN MAIN MENU TO START THE QUIZ";
+	cout<<"\n\n\n\nPress  0 to exit otherwise any key to jump into main menu.\n";
+	ch=getch();
+	if(ch=='0'){
+		quit();
+	}
+}
+void about_developer(){//printing about development 
+	clrscr();
+	cout<<"\n|||||||-------------------About Development----------------||||||\n";
+	cout<<"\nTHIS QUIZ IS DEVELOPED FOR THE PARTIAL FULFILLMENT \n";
+	cout<<"OF CBSE COMPUTER SCIENCE PROJECT CLASS 12TH A,\n";
+	cout<<"DURING FEBRUARY 2019,\nBY CHITRA KANDPAL, ROLL NO.14 .\n";
+	cout<<"\n\n\n\nPress  0 to exit otherwise any key to jump into main menu.\n";
+	ch=getch();
+	if(ch=='0'){
+		quit();
+	}
+}
+void main(){//main menu ,, menu driven program    
+	do{	clrscr();
+		pl.reset();
+		cout<<"||||||--------------------Quiz----------------------|||||||\n";
+		cout<<"||||||--------------------Menu----------------------|||||||\n";
+		cout<<"\n";
+		cout<<"\t\t1.Play\n";
+		cout<<"\t\t2.Scoreboard\n";
+		cout<<"\t\t3.Admin\n";
+		cout<<"\t\t4.How to play\n";
+		cout<<"\t\t5.About Development\n";
+		cout<<"\t\t6.Exit\n";
+		cout<<"\n\n\n\nNote*-Press the Serial no. to choose the option.\n";
+		ch=getch();
+		switch(ch){
+			case '1':
+				play();
+			break;
+			case '2':
+				scoreboard();
+			break;
+			case '3':
+				admin();
+			break;
+			case '4':
+				how_to_play();
+			break;
+			case '5':
+				about_developer();
+			break;
+			case '6':
+				quit();
+			break;
+			default:
+				cout<<"\nInvalid Option, press any key to Try again..!\n";
+				getch();
+		}
+	}while(1);
+}	
